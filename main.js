@@ -63,7 +63,8 @@ ipcMain.on('select-music', event => {
     );
 });
 ipcMain.on('add-tracks', (event, musicList) => {
-    const updatedMusicList = myStore.addTracks(musicList).getTracks();
+    myStore.addTracks(musicList);
+    const updatedMusicList = myStore.getTracks();
     mainWindow.send('getTracks', updatedMusicList);
 });
 
