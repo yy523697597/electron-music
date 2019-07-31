@@ -6,7 +6,7 @@
     "scripts": {
         "start": "nodemon --watch main.js --exec 'electron .'"
     },
-    "repository": "https://github.com/electron/electron-quick-start",
+    "repository": "https://github.com/yy523697597/electron-music.git",
     "keywords": [
         "Electron",
         "quick",
