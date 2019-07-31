@@ -1,29 +1,13 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-// 创建窗口的类
-class AppWindow extends BrowserWindow {
-    constructor(config, location) {
-        const basicConfig = {
-            width: 800,
-            height: 600,
-            webPreferences: {
-                nodeIntegration: true
-            },
-            show: false
-        };
-        const finalConfig = { ...basicConfig, ...config };
-        super(finalConfig);
-        this.loadFile(location);
-        // 优雅显示新窗口
-        this.once('ready-to-show', () => {
-            this.show();
-        });
-    }
-}
+const { AppWindow } = require('./class.js');
+const { app, ipcMain, dialog } = require('electron');
+const { DataStore } = require('./musicData');
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+
+let myStore = new DataStore('musicList');
 
 function createWindow() {
     // Create the browser window.
@@ -31,9 +15,12 @@ function createWindow() {
 
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
-
+    mainWindow.webContents.on('did-finish-load', () => {
+        const musicList = myStore.getTracks();
+        mainWindow.send('getTracks', musicList);
+    });
     // Emitted when the window is closed.
-    mainWindow.on('closed', function() {
+    mainWindow.on('closed', () => {
         // Dereference the window object, usually you would store windows
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
@@ -42,7 +29,8 @@ function createWindow() {
 }
 
 function createAddWindow() {
-    const addWindow = new AppWindow(
+    // 此处关闭窗口时要改addWindow 为 null，所以不能用 const 声明
+    let addWindow = new AppWindow(
         {
             width: 500,
             height: 400,
@@ -50,10 +38,33 @@ function createAddWindow() {
         },
         './render/add.html'
     );
+    addWindow.on('closed', () => {
+        // Dereference the window object, usually you would store windows
+        // in an array if your app supports multi windows, this is the time
+        // when you should delete the corresponding element.
+        addWindow = null;
+    });
 }
 
 ipcMain.on('add-music', () => {
     createAddWindow();
+});
+ipcMain.on('select-music', event => {
+    dialog.showOpenDialog(
+        {
+            properties: ['openFile', 'multiSelections'],
+            filters: [{ name: 'Music', extensions: ['mp3'] }]
+        },
+        filePaths => {
+            if (filePaths) {
+                event.sender.send('selected-music-list', filePaths);
+            }
+        }
+    );
+});
+ipcMain.on('add-tracks', (event, musicList) => {
+    const updatedMusicList = myStore.addTracks(musicList).getTracks();
+    mainWindow.send('getTracks', updatedMusicList);
 });
 
 // This method will be called when Electron has finished

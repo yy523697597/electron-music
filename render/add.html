@@ -13,12 +13,21 @@
     <body>
         <div class="container">
             <h1 class="mt4">添加音乐到曲库</h1>
+            <h3 id="noMusic">您还未选择任何音乐</h3>
+            <div id="musicList"></div>
             <button
                 type="button"
-                class="btn btn-primary btn-lg btn-block mt-4"
+                class="btn btn-outline-primary btn-lg btn-block mt-4"
                 id="selectMusic"
             >
                 选择音乐
+            </button>
+            <button
+                type="button"
+                class="btn btn-primary btn-lg btn-block mt-4"
+                id="addSelectedMusic"
+            >
+                添加音乐
             </button>
         </div>
         <script src="./add.js"></script>
