@@ -66,6 +66,10 @@ ipcMain.on("add-tracks", (event, musicList) => {
   const updatedMusicList = myStore.addTracks(musicList).getTracks();
   mainWindow.send("getTracks", updatedMusicList);
 });
+ipcMain.on("delete-track", (event, id) => {
+  const updatedMusicList = myStore.deleteTrack(id).getTracks();
+  mainWindow.send("getTracks", updatedMusicList);
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
