@@ -1,6 +1,11 @@
 const { ipcRenderer } = require("electron");
-const { rendererSend, $ } = require("./helper.js");
+const { rendererSend, $, convertDuration } = require("./helper.js");
+let allTracks,
+  currentMusic,
+  songName,
+  musicAudio = new Audio();
 rendererSend("addMusic", "add-music");
+
 const renderListHTML = tracks => {
   const musicContainer = $("musicContainer");
   const musicListHTML = tracks.reduce((html, music) => {
@@ -18,14 +23,41 @@ const renderListHTML = tracks => {
   }, "");
   musicContainer.innerHTML = musicListHTML;
 };
-let allTracks;
 
-ipcRenderer.on("getTracks", (event, tracks) => {
-  renderListHTML(tracks);
-  allTracks = tracks;
+const renderAudioPlayerHTML = (songName, duration) => {
+  let musicDetail = $("musicDetail");
+  let html = `
+        <hr>
+        <div class="row song" >
+            <div class="col-8 font-weight-bold"><span>正在播放：</span><span class="song-name">${songName}</span></div>
+            <div class="col-4">
+                <span id="seeker">00:00</span> / <span>${convertDuration(
+                  duration
+                )}</span>
+            </div>
+        </div>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+        </div>
+  `;
+  musicDetail.innerHTML = html;
+};
+
+const updateProgress = (currentTime, duration) => {
+  const percent = Math.floor((currentTime / duration) * 100);
+  const bar = $("progressBar");
+  bar.innerText = bar.style.width = percent + "%";
+};
+
+musicAudio.addEventListener("loadedmetadata", () => {
+  renderAudioPlayerHTML(songName, musicAudio.duration);
 });
-let musicAudio = new Audio();
-let currentMusic;
+musicAudio.addEventListener("timeupdate", () => {
+  const seeker = $("seeker");
+  seeker.innerText = convertDuration(musicAudio.currentTime);
+  updateProgress(musicAudio.currentTime, musicAudio.duration);
+});
+
 $("musicContainer").addEventListener("click", event => {
   event.preventDefault();
   const { dataset, classList } = event.target;
@@ -38,15 +70,17 @@ $("musicContainer").addEventListener("click", event => {
       //  播放音乐
       currentMusic = allTracks.find(music => id === music.id);
       if (currentMusic) {
+        songName = currentMusic.fileName;
         musicAudio.src = currentMusic.path;
         musicAudio.play();
         // 重置其他暂停按钮
-        const resetIconElement = document.querySelector("fa-pause");
+        const resetIconElement = document.querySelector(".fa-pause");
         if (resetIconElement) {
           resetIconElement.classList.replace("fa-pause", "fa-play");
         }
       }
     }
+
     classList.replace("fa-play", "fa-pause");
   } else if (id && classList.contains("fa-pause")) {
     //  处理暂停
@@ -60,4 +94,9 @@ $("musicContainer").addEventListener("click", event => {
     //  处理删除
     ipcRenderer.send("delete-track", id);
   }
+});
+
+ipcRenderer.on("getTracks", (event, tracks) => {
+  renderListHTML(tracks);
+  allTracks = tracks;
 });
