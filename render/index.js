@@ -53,6 +53,10 @@ $("musicContainer").addEventListener("click", event => {
     musicAudio.pause();
     classList.replace("fa-pause", "fa-play");
   } else if (id && classList.contains("fa-trash-alt")) {
+    if (currentMusic && currentMusic.id === id) {
+      // 删除正在播放的歌曲，应该暂停播放
+      musicAudio.pause();
+    }
     //  处理删除
     ipcRenderer.send("delete-track", id);
   }
